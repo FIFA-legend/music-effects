@@ -1,11 +1,13 @@
 package com.itechart.springmusic;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 public class MusicEffects {
 
     /**
      * Creates a new array of samples where first {@code samplesPerChannelToReverse}
-     * per each channel are written in the reverse order. If {@code samplesPerChannelToReverse > samples.length}
-     * then the whole array is reversed.
+     * per each channel are written in the reverse order. If {@code samplesPerChannelToReverse > samples.length / 2}
+     * then the {@code samples} array is filled with zeros to fit the size.
      *
      * @param samples array of samples that should be reversed.
      * @param samplesPerChannelToReverse amount of samples to reverse in each channel.
@@ -17,40 +19,31 @@ public class MusicEffects {
             throw new IllegalArgumentException("Sample per each channel must not be negative");
         }
 
-        int samplesPerTrackToReverse = Math.min(samples.length, 2 * samplesPerChannelToReverse);
-        float[] samplesToReverse = extractSamplesToReverse(samples, samplesPerTrackToReverse);
-        reverseSamples(samplesToReverse);
+        float[] leftChannelSamples = extractChannel(samples, samplesPerChannelToReverse, 0);
+        float[] rightChannelSamples = extractChannel(samples, samplesPerChannelToReverse, 1);
 
-        float[] processedSamples = new float[samples.length];
-        System.arraycopy(samplesToReverse, 0, processedSamples, 0, samplesPerTrackToReverse);
-        if (samplesPerTrackToReverse < processedSamples.length) {
-            int copyCount = processedSamples.length - samplesPerTrackToReverse;
-            System.arraycopy(samples, samplesPerTrackToReverse, processedSamples, samplesPerTrackToReverse, copyCount);
+        ArrayUtils.reverse(leftChannelSamples, 0, samplesPerChannelToReverse);
+        ArrayUtils.reverse(rightChannelSamples, 0, samplesPerChannelToReverse);
+
+        return joinChannels(leftChannelSamples, rightChannelSamples);
+    }
+
+    private float[] extractChannel(float[] samples, int samplesPerChannelToReverse, int channel) {
+        int channelLength = Math.max(samplesPerChannelToReverse, samples.length / 2);
+        float[] channelSamples = new float[channelLength];
+        for (int i = channel, j = 0; i < samples.length && j < channelLength; i += 2, j++) {
+            channelSamples[j] = samples[i];
         }
-        return processedSamples;
+        return channelSamples;
     }
 
-    private float[] extractSamplesToReverse(float[] samples, int samplesPerTrackToReverse) {
-        float[] samplesToReverse = new float[samplesPerTrackToReverse];
-        System.arraycopy(samples, 0, samplesToReverse, 0, samplesPerTrackToReverse);
-        return samplesToReverse;
-    }
-
-    private void reverseSamples(float[] samplesToReverse) {
-        reverseChannel(samplesToReverse, 0, samplesToReverse.length - 2);
-        reverseChannel(samplesToReverse, 1, samplesToReverse.length - 1);
-    }
-
-    private void reverseChannel(float[] samplesToReverse, int startIndex, int endIndex) {
-        float temp;
-        while (startIndex < endIndex) {
-            temp = samplesToReverse[startIndex];
-            samplesToReverse[startIndex] = samplesToReverse[endIndex];
-            samplesToReverse[endIndex] = temp;
-
-            startIndex += 2;
-            endIndex -= 2;
+    private float[] joinChannels(float[] leftChannelSamples, float[] rightChannelSamples) {
+        float[] reversedSamples = new float[leftChannelSamples.length + rightChannelSamples.length];
+        for (int i = 0, j = 0; i < leftChannelSamples.length; i++, j += 2) {
+            reversedSamples[j] = leftChannelSamples[i];
+            reversedSamples[j + 1] = rightChannelSamples[i];
         }
+        return reversedSamples;
     }
 
 }
