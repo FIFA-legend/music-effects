@@ -26,7 +26,6 @@ class MusicEffectsTest {
 
         byte[] startByteSamples = readBytes(actualStream, (int) actualFile.length());
         assertNotNull(startByteSamples);
-        System.out.println(startByteSamples.length);
 
         float[] startFloatSamples = convertToFloatSamples(startByteSamples);
         MusicEffects musicEffects = new MusicEffects();
